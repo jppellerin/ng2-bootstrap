@@ -14,7 +14,7 @@ import {
   HostListener,
   Input,
   OnDestroy,
-  HostBinding, QueryList, Query
+  HostBinding
 } from '@angular/core';
 import {global} from '@angular/core/src/facade/lang';
 import {DOCUMENT} from '@angular/platform-browser';
@@ -73,24 +73,28 @@ export class ModalDirective implements AfterViewInit, OnDestroy {
   private componentsHelper:ComponentsHelper;
 
   /** Host element manipulations */
+  // this.renderer.setElementAttribute(this.element.nativeElement, 'aria-hidden', 'false');
+  @HostBinding('attr.aria-hidden') private _isHidden:boolean;
+  @HostBinding(`class.${ClassName.IN}`) private _classIn:boolean;
   // this.renderer.setElementStyle(this.element.nativeElement, 'display', 'block');
   @HostBinding('style.display')
   private get _displayStyle():string {
     return this._isHidden ? 'node' : 'block';
   }
 
-  // this.renderer.setElementAttribute(this.element.nativeElement, 'aria-hidden', 'false');
-  @HostBinding('attr.aria-hidden') private _isHidden:boolean;
-  @HostBinding(`class.${ClassName.IN}`) private _classIn:boolean;
-
   @HostListener('click', ['$event'])
-  protected onClick(e:any):void {
-    this.hide(e);
+  protected onClick(event:any):void {
+    if (event.target === this.element.nativeElement) {
+      this.hide(event);
+    }
   }
 
-  // todo: consider preventing default and stoping propogation
-  @HostListener('keydown.esc') protected onEsc():void { this.hide(); }
-  
+  // todo: consider preventing default and stopping propagation
+  @HostListener('keydown.esc')
+  protected onEsc():void {
+    this.hide();
+  }
+
   public constructor(element:ElementRef,
                      renderer:Renderer,
                      @Inject(DOCUMENT) document:any,
@@ -116,7 +120,6 @@ export class ModalDirective implements AfterViewInit, OnDestroy {
   }
 
   public ngAfterViewInit():any {
-    console.log(this.eslist);
     this._config = this._config || this.getConfig();
     this.show();
   }
@@ -142,22 +145,9 @@ export class ModalDirective implements AfterViewInit, OnDestroy {
       this.renderer.setElementClass(this.document.body, ClassName.OPEN, true);
     }
 
-    // todo: implement closing modal
-    // $(this._element).on(
-    //   Event.CLICK_DISMISS,
-    //   Selector.DATA_DISMISS,
-    //   $.proxy(this.hide, this)
-    // )
-    // todo: implement closing modal
-    // $(this._dialog).on(Event.MOUSEDOWN_DISMISS, () => {
-    //   $(this._element).one(Event.MOUSEUP_DISMISS, (event) => {
-    //     if ($(event.target).is(this._element)) {
-    //       this._ignoreBackdropClick = true
-    //     }
-    //   })
-    // })
-
-    this.showBackdrop(() => { this.showElement(relatedTarget); });
+    this.showBackdrop(() => {
+      this.showElement(relatedTarget);
+    });
   }
 
   public hide(event?:Event):void {
@@ -196,8 +186,8 @@ export class ModalDirective implements AfterViewInit, OnDestroy {
     if (!this.element.nativeElement.parentNode ||
       (this.element.nativeElement.parentNode.nodeType !== Node.ELEMENT_NODE)) {
       // don't move modals dom position
-      if (typeof document !== 'undefined') {
-        document.body.appendChild(this.element.nativeElement);
+      if (this.document && this.document.body) {
+        this.document.body.appendChild(this.element.nativeElement);
       }
     }
 
@@ -205,14 +195,10 @@ export class ModalDirective implements AfterViewInit, OnDestroy {
     this.renderer.setElementProperty(this.element.nativeElement, 'scrollTop', 0);
 
     if (this.isAnimated) {
-      Utils.reflow(this.element);
+      Utils.reflow(this.element.nativeElement);
     }
 
     this._classIn = true;
-
-    // if (this._config.focus) {
-    //   this.enforceFocus();
-    // }
 
     this.onShown.emit(this);
     const transitionComplete = () => {
@@ -235,8 +221,8 @@ export class ModalDirective implements AfterViewInit, OnDestroy {
       if (this.document && this.document.body) {
         this.renderer.setElementClass(this.document.body, ClassName.OPEN, true);
       }
-      // this._resetAdjustments();
-      // this._resetScrollbar();
+      this.resetAdjustments();
+      this.resetScrollbar();
       this.onHidden.emit(this);
     });
   }
@@ -251,33 +237,10 @@ export class ModalDirective implements AfterViewInit, OnDestroy {
           new ModalBackdropOptions({animate: false}));
 
       this.backdrop.then((backdrop:ComponentRef<ModalBackdropComponent>) => {
-        // Event.CLICK_DISMISS
-        backdrop.instance.onClick
-          .subscribe((event:Event)=> {
-            if (this.ignoreBackdropClick) {
-              this.ignoreBackdropClick = false;
-              return;
-            }
+        if (this.isAnimated) {
+          Utils.reflow(backdrop.instance.element.nativeElement);
+        }
 
-            if (event.target === event.target) {
-              console.log('piu puy')
-            }
-            // if (event.target !== event.currentTarget) {
-            //   return;
-            // }
-
-            if (modalConfigDefaults.backdrop === 'static') {
-              // todo: focus on window element
-              // todo: use renderer?
-              this.element.nativeElement.focus();
-            } else {
-              this.hide();
-            }
-          });
-
-        /*if (doAnimate) {
-         Util.reflow(this._backdrop)
-         }*/
         backdrop.instance.isShown = true;
         if (!callback) {
           return;
@@ -349,6 +312,11 @@ export class ModalDirective implements AfterViewInit, OnDestroy {
   //   $(window).off(Event.RESIZE)
   // }
   // }
+
+  private resetAdjustments():void {
+    this.renderer.setElementStyle(this.element.nativeElement, 'paddingLeft', '');
+    this.renderer.setElementStyle(this.element.nativeElement, 'paddingRight', '');
+  }
 
   /** Scroll bar tricks */
 
