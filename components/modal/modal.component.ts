@@ -75,11 +75,11 @@ export class ModalDirective implements AfterViewInit, OnDestroy {
   /** Host element manipulations */
   // this.renderer.setElementAttribute(this.element.nativeElement, 'aria-hidden', 'false');
   @HostBinding('attr.aria-hidden') private _isHidden:boolean;
-  @HostBinding(`class.${ClassName.IN}`) private _classIn:boolean;
+  @HostBinding(`class.${ClassName.IN}`) private _addClassIn:boolean;
   // this.renderer.setElementStyle(this.element.nativeElement, 'display', 'block');
   @HostBinding('style.display')
   private get _displayStyle():string {
-    return this._isHidden ? 'node' : 'block';
+    return this._isHidden ? 'none' : 'block';
   }
 
   @HostListener('click', ['$event'])
@@ -121,7 +121,7 @@ export class ModalDirective implements AfterViewInit, OnDestroy {
 
   public ngAfterViewInit():any {
     this._config = this._config || this.getConfig();
-    this.show();
+    this._isHidden = !this._isShown;
   }
 
   /** Public methods */
@@ -163,7 +163,7 @@ export class ModalDirective implements AfterViewInit, OnDestroy {
     }
 
     this._isShown = false;
-    this._classIn = false;
+    this._addClassIn = false;
 
     if (this.isAnimated) {
       setTimeout(() => this.hideModal(), TRANSITION_DURATION);
@@ -198,7 +198,7 @@ export class ModalDirective implements AfterViewInit, OnDestroy {
       Utils.reflow(this.element.nativeElement);
     }
 
-    this._classIn = true;
+    this._addClassIn = true;
 
     this.onShown.emit(this);
     const transitionComplete = () => {
@@ -216,10 +216,10 @@ export class ModalDirective implements AfterViewInit, OnDestroy {
   }
 
   private hideModal():void {
-    this._isHidden = false;
+    this._isHidden = true;
     this.showBackdrop(() => {
       if (this.document && this.document.body) {
-        this.renderer.setElementClass(this.document.body, ClassName.OPEN, true);
+        this.renderer.setElementClass(this.document.body, ClassName.OPEN, false);
       }
       this.resetAdjustments();
       this.resetScrollbar();
@@ -238,6 +238,7 @@ export class ModalDirective implements AfterViewInit, OnDestroy {
 
       this.backdrop.then((backdrop:ComponentRef<ModalBackdropComponent>) => {
         if (this.isAnimated) {
+          backdrop.instance.isAnimated = this.isAnimated;
           Utils.reflow(backdrop.instance.element.nativeElement);
         }
 
@@ -265,10 +266,6 @@ export class ModalDirective implements AfterViewInit, OnDestroy {
         };
 
         if (backdrop.instance.isAnimated) {
-          // todo: this is delay before hiding window
-          // $(this._backdrop)
-          //   .one(Util.TRANSITION_END, callbackRemove)
-          //   .emulateTransitionEnd(BACKDROP_TRANSITION_DURATION)
           setTimeout(callbackRemove, BACKDROP_TRANSITION_DURATION);
         } else {
           callbackRemove();

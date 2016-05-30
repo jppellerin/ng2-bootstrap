@@ -4,27 +4,17 @@ import {CORE_DIRECTIVES} from '@angular/common';
 import {TAB_DIRECTIVES} from '../../ng2-bootstrap';
 import {ModalDemoComponent} from './modal/modal-demo';
 
-let name = 'Alerts';
-let src = 'https://github.com/valor-software/ng2-bootstrap/blob/master/components/alert/alert.ts';
+let name = 'Modals';
+let src = 'https://github.com/valor-software/ng2-bootstrap/blob/master/components/modal/';
 
 // webpack html imports
-let doc = require('../../components/alert/readme.md');
-let titleDoc = require('../../components/alert/title.md');
+let doc = require('../../components/modal/readme.md');
+let titleDoc = require('../../components/modal/title.md');
 
 let ts = require('!!prismjs?lang=typescript!./modal/modal-demo.ts');
 let html = require('!!prismjs?lang=markup!./modal/modal-demo.html');
 
-
-
-@Component({
-  selector: 'modal-section',
-  template: `<modal-demo></modal-demo>`,
-  directives: [ModalDemoComponent, TAB_DIRECTIVES, CORE_DIRECTIVES]
-})
-export class ModalSectionComponent {
-}
-
-const t = `
+const template = `
   <section id="${name.toLowerCase()}">
     <h1>${name}<small>(<a href="${src}">src</a>)</small></h1>
 
@@ -66,3 +56,11 @@ const t = `
     </div>
   </section>
   `;
+
+@Component({
+  selector: 'modal-section',
+  template: template,
+  directives: [ModalDemoComponent, TAB_DIRECTIVES, CORE_DIRECTIVES]
+})
+export class ModalSectionComponent {
+}
