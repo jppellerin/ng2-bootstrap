@@ -28,7 +28,7 @@ const BACKDROP_TRANSITION_DURATION = 150;
 
 @Directive({
   selector: '[bsModal]',
-  exportAs: 'modal'
+  exportAs: 'bs-modal'
 })
 export class ModalDirective implements AfterViewInit, OnDestroy {
   @Input()
